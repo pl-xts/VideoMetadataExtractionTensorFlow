@@ -46,7 +46,7 @@ cap = cv2.VideoCapture('./tensorflow_hub/sample_video/IMG_1048.mp4')
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 fps = cap.get(cv2.CAP_PROP_FPS )
 # Only each [procesing_frame_rate] frame will be used for prediction
-procesing_frame_rate = frame_count / int(frame_count/fps)
+procesing_frame_rate = int(frame_count / int(frame_count/fps))
 # parameter required for process completion track
 point = frame_count / 100
 # parameters requried in resize()
@@ -88,7 +88,7 @@ with tf.Graph().as_default():
         
         ret, image_np = cap.read()
         image_np = cv2.resize(image_np, (int(height/2), int(width/2)))
-        if (i % int(procesing_frame_rate) == 0):
+        if (i % procesing_frame_rate == 0):
           #print("Started [%s]\n" % i)
           result_out, image_out = session.run(
             [result, decoded_image_float],
