@@ -22,6 +22,12 @@ from datetime import datetime
 import cv2
 import base64
 
+from utils import prepare_results as pr
+
+import sys
+sys.path.append("./tensorflow_hub/utils")
+
+
 def find_top_classes(result_list, result_out):
  # print("Length %s\n" % range(len(result_out["detection_class_entities"])))
   for i in range(len(result_out["detection_class_entities"])):
@@ -33,18 +39,11 @@ def find_top_classes(result_list, result_out):
        result_list[current_class] = scores
  #print("Apending: %s" % result_list)
 
-def sort_and_print(result_list):
-  i = 1
-  sorted_values = sorted(result_list, reverse=True, key=result_list.__getitem__)
-  for k in sorted_values:
-    print("[{}] {}: {}%".format(i, k, result_list[k]))
-    i += 1
-
 # Change path to video file
 cap = cv2.VideoCapture('./tensorflow_hub/sample_video/IMG_1048.mp4')
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-fps = cap.get(cv2.CAP_PROP_FPS )
+fps = cap.get(cv2.CAP_PROP_FPS)
 # Only each [procesing_frame_rate] frame will be used for prediction
 procesing_frame_rate = int(frame_count / int(frame_count/fps))
 # parameter required for process completion track
@@ -79,7 +78,7 @@ with tf.Graph().as_default():
     #result_list = dict(predicted_class="", value=0)
     result_list = dict()
     i = 0
-    
+    print("=======================================")
     while True:
         
         if (procesing_frame_rate > frame_count):
@@ -94,16 +93,17 @@ with tf.Graph().as_default():
             [result, decoded_image_float],
             feed_dict={input_placeholder: image_np})
           find_top_classes(result_list, result_out)
-          print("[{}] Completed {} %".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()),int(i / point)))
+          print("[{}] Completed: {} %".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()),int(i / point)))
         i = i + 1
         if (cap.get(cv2.CAP_PROP_FRAME_COUNT) == i):
           # print("%s\n" % result_out["detection_class_entities"])
           # print("%s\n" % result_out["detection_scores"])
           break
     
-    sort_and_print(result_list)
+    pr.sort_translate_print(result_list)
 
     passed_seconds = int(time.time() - start)
     m, s = divmod(passed_seconds, 60)
     print("Total spend time: {:02d}m : {:02d}s".format(m,s))
+    print("=======================================")
 cap.release()

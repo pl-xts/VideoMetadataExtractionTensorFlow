@@ -22,6 +22,11 @@ from datetime import datetime
 import cv2
 import base64
 
+from utils import prepare_results as pr
+
+import sys
+sys.path.append("./tensorflow_hub/utils")
+
 def find_top_classes(result_list, result_out):
  # print("Length %s\n" % range(len(result_out["detection_class_entities"])))
   for i in range(len(result_out["detection_class_entities"])):
@@ -32,13 +37,6 @@ def find_top_classes(result_list, result_out):
     if current_class in result_list.keys() and result_list[current_class] < scores:
        result_list[current_class] = scores
  #print("Apending: %s" % result_list)
-
-def sort_and_print(result_list):
-  i = 1
-  sorted_values = sorted(result_list, reverse=True, key=result_list.__getitem__)
-  for k in sorted_values:
-    print("[{}] {}: {}%".format(i, k, result_list[k]))
-    i += 1
 
 # Change path to video file
 cap = cv2.VideoCapture('./tensorflow_hub/sample_video/smaller.mp4')
@@ -79,7 +77,7 @@ with tf.Graph().as_default():
     #result_list = dict(predicted_class="", value=0)
     result_list = dict()
     i = 0
-    
+    print("=======================================")
     while True:
         
         if (procesing_frame_rate > frame_count):
@@ -96,14 +94,15 @@ with tf.Graph().as_default():
           # print("%s\n" % result_out["detection_class_entities"])
           # print("%s\n" % result_out["detection_scores"])
           find_top_classes(result_list, result_out)
-          print("[{}] Completed {} %".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()),int(i / point)))
+          print("[{}] Completed: {} %".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()),int(i / point)))
         i = i + 1
         if (cap.get(cv2.CAP_PROP_FRAME_COUNT) == i):
           break
     
-    sort_and_print(result_list)
+    pr.sort_translate_print(result_list)
 
     passed_seconds = int(time.time() - start)
     m, s = divmod(passed_seconds, 60)
     print("Total spend time: {:02d}m : {:02d}s".format(m,s))
+    print("=======================================")
 cap.release()
