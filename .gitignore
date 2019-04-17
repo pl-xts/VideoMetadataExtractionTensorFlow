@@ -1,2 +1,3 @@
 
 tensorflow_hub/utils/api-key.txt
+*.pyc
