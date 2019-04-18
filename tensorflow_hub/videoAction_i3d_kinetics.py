@@ -1,31 +1,19 @@
-#@title Import the necessary modules
-# TensorFlow and TF-Hub modules.
 import tensorflow as tf
 import tensorflow_hub as hub
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-# Some modules to help with reading the UCF101 dataset.
 import random
-import re
-import os
-import tempfile
 import cv2
 import numpy as np
+import time
+from statistics import mean
 
-# Some modules to display an animation using imageio.
-import imageio
-from IPython import display
+from utils import prepare_results as pr
+from utils import store_results as sr
 
-from urllib import request  # requires python3
-
-# Utilities to open video files using CV2
-def crop_center_square(frame):
-  y, x = frame.shape[0:2]
-  min_dim = min(y, x)
-  start_x = (x // 2) - (min_dim // 2)
-  start_y = (y // 2) - (min_dim // 2)
-  return frame[start_y:start_y+min_dim,start_x:start_x+min_dim]
+import sys
+sys.path.append("./tensorflow_hub/utils")
 
 def load_video(path, max_frames=0, resize=(224, 224)):
   cap = cv2.VideoCapture(path)
@@ -35,7 +23,6 @@ def load_video(path, max_frames=0, resize=(224, 224)):
       ret, frame = cap.read()
       if not ret:
         break
-      frame = crop_center_square(frame)
       frame = cv2.resize(frame, resize)
       frame = frame[:, :, [2, 1, 0]]
       frames.append(frame)
@@ -47,29 +34,21 @@ def load_video(path, max_frames=0, resize=(224, 224)):
   return np.array(frames) / 255.0
 
 
-#@title Get the kinetics-400 labels
-# Get the kinetics-400 action labels from the GitHub repository.
-KINETICS_URL = "https://raw.githubusercontent.com/deepmind/kinetics-i3d/master/data/label_map.txt"
-with request.urlopen(KINETICS_URL) as obj:
-  labels = [line.decode("utf-8").strip() for line in obj.readlines()]
-print("Found %d labels." % len(labels))
+file = open("./tensorflow_hub/i3d-kinetics-400_labels.txt","r")
+labels = []
+for line in file.readlines():
+  labels.append(line.strip())
+file.close()
 
-
-# Get a sample cricket video.
 sample_video = load_video("./tensorflow_hub/sample_video/smaller.mp4")
-
-print("sample_video is a numpy array of shape %s." % str(sample_video.shape))
-#animate(sample_video)
-
-
-# Run the i3d model on the video and print the top 5 actions.
-
+video_type = "default"
+model_name = "i3d-kinetics-400"
 # First add an empty dimension to the sample video as the model takes as input
 # a batch of videos.
 model_input = np.expand_dims(sample_video, axis=0)
 
-# Create the i3d model and get the action probabilities.
 with tf.Graph().as_default():
+  start = time.time()
   i3d = hub.Module("https://tfhub.dev/deepmind/i3d-kinetics-400/1")
   input_placeholder = tf.placeholder(shape=(None, None, 224, 224, 3), dtype=tf.float32)
   logits = i3d(input_placeholder)
@@ -78,6 +57,19 @@ with tf.Graph().as_default():
     [ps] = session.run(probabilities,
                        feed_dict={input_placeholder: model_input})
 
+passed_seconds = int(time.time() - start)
+m, s = divmod(passed_seconds, 60)
+
 print("Top 5 actions:")
+names = []
+scores = []
+rank = 0
 for i in np.argsort(ps)[::-1][:5]:
-  print("%-22s %.2f%%" % (labels[i], ps[i] * 100))
+  names.append(labels[i].capitalize())
+  scores.append(int(ps[i] * 100))
+
+pr.sort_translate_print(dict(zip(names, scores)), model_name)
+
+print("Total spend time: {:02d}m : {:02d}s".format(m,s))
+print("=======================================")
+sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_type)

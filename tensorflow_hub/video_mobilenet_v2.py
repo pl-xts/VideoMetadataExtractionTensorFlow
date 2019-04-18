@@ -23,23 +23,15 @@ import cv2
 import base64
 
 from utils import prepare_results as pr
+from utils import store_results as sr
 
 import sys
 sys.path.append("./tensorflow_hub/utils")
 
-def find_top_classes(result_list, result_out):
- # print("Length %s\n" % range(len(result_out["detection_class_entities"])))
-  for i in range(len(result_out["detection_class_entities"])):
-    current_class = result_out["detection_class_entities"][i].decode("utf-8")
-    scores = int (100 * result_out["detection_scores"][i])
-    if current_class not in result_list.keys(): 
-      result_list[current_class] = scores
-    if current_class in result_list.keys() and result_list[current_class] < scores:
-       result_list[current_class] = scores
- #print("Apending: %s" % result_list)
-
 # Change path to video file
 cap = cv2.VideoCapture('./tensorflow_hub/sample_video/smaller.mp4')
+video_type = "default"
+model_name = "Mobilenet V2"
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 fps = cap.get(cv2.CAP_PROP_FPS )
@@ -53,6 +45,20 @@ height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
 module_handle = "https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1"
+
+def average(result_list):
+ return sum(result_list.values()) / len(result_list)
+
+def find_top_classes(result_list, result_out):
+ # print("Length %s\n" % range(len(result_out["detection_class_entities"])))
+  for i in range(len(result_out["detection_class_entities"])):
+    current_class = result_out["detection_class_entities"][i].decode("utf-8")
+    scores = int (100 * result_out["detection_scores"][i])
+    if current_class not in result_list.keys(): 
+      result_list[current_class] = scores
+    if current_class in result_list.keys() and result_list[current_class] < scores:
+       result_list[current_class] = scores
+ #print("Apending: %s" % result_list)
 
 detection_graph = tf.Graph()
 with tf.Graph().as_default():
@@ -99,10 +105,12 @@ with tf.Graph().as_default():
         if (cap.get(cv2.CAP_PROP_FRAME_COUNT) == i):
           break
     
-    pr.sort_translate_print(result_list)
-
     passed_seconds = int(time.time() - start)
     m, s = divmod(passed_seconds, 60)
+    
+    pr.sort_translate_print(result_list, model_name)
+
     print("Total spend time: {:02d}m : {:02d}s".format(m,s))
     print("=======================================")
+    sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_type)
 cap.release()
