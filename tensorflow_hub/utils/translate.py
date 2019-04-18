@@ -4,6 +4,7 @@ URL = "https://translate.yandex.net/api/v1.5/tr.json/translate"
 
 file = open("./tensorflow_hub/utils/api-key.txt","r")
 key = file.read()
+file.close()
 headers = {'content-type': 'application/x-www-form-urlencoded'}
 params = {'key': key,
           'format': 'html'}
