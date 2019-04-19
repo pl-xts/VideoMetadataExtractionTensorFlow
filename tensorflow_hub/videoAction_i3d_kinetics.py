@@ -15,6 +15,14 @@ from utils import store_results as sr
 import sys
 sys.path.append("./tensorflow_hub/utils")
 
+# Change main paramateres
+path_to_file = "./tensorflow_hub/sample_video/"
+video_name = "IMG_1048"
+video_type = ".mp4"
+model_name = "i3d-kinetics-400"
+
+sample_video = load_video(path_to_file + video_name + video_type)
+
 def load_video(path, max_frames=0, resize=(224, 224)):
   cap = cv2.VideoCapture(path)
   frames = []
@@ -40,19 +48,15 @@ for line in file.readlines():
   labels.append(line.strip())
 file.close()
 
-sample_video = load_video("./tensorflow_hub/sample_video/smaller.mp4")
-video_type = "default"
-model_name = "i3d-kinetics-400"
-# First add an empty dimension to the sample video as the model takes as input
-# a batch of videos.
-model_input = np.expand_dims(sample_video, axis=0)
-
 with tf.Graph().as_default():
   start = time.time()
   i3d = hub.Module("https://tfhub.dev/deepmind/i3d-kinetics-400/1")
   input_placeholder = tf.placeholder(shape=(None, None, 224, 224, 3), dtype=tf.float32)
   logits = i3d(input_placeholder)
   probabilities = tf.nn.softmax(logits)
+  # First add an empty dimension to the sample video as the model takes as input
+  # a batch of videos.  
+  model_input = np.expand_dims(sample_video, axis=0)
   with tf.train.MonitoredSession() as session:
     [ps] = session.run(probabilities,
                        feed_dict={input_placeholder: model_input})
@@ -72,4 +76,4 @@ pr.sort_translate_print(dict(zip(names, scores)), model_name)
 
 print("Total spend time: {:02d}m : {:02d}s".format(m,s))
 print("=======================================")
-sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_type)
+sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_name)

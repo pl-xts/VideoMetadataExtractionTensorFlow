@@ -11,6 +11,7 @@ def create_bar_chart(names, scores, model_name):
   plt.ylabel('Klases')
   plt.title(model_name)
   plt.show()
+
 def create_request_and_translate(sorted_names):
   
   request_body = "text="

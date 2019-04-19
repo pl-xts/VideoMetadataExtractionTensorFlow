@@ -28,10 +28,12 @@ from utils import store_results as sr
 import sys
 sys.path.append("./tensorflow_hub/utils")
 
-# Change path to video file
-cap = cv2.VideoCapture('./tensorflow_hub/sample_video/smaller.mp4')
-video_type = "default"
+# Change main paramateres
+path_to_file = "./tensorflow_hub/sample_video/"
+video_name = "IMG_1048"
+video_type = ".mp4"
 model_name = "Mobilenet V2"
+cap = cv2.VideoCapture(path_to_file + video_name + video_type)
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 fps = cap.get(cv2.CAP_PROP_FPS )
@@ -112,5 +114,5 @@ with tf.Graph().as_default():
 
     print("Total spend time: {:02d}m : {:02d}s".format(m,s))
     print("=======================================")
-    sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_type)
+    sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
 cap.release()
