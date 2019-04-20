@@ -12,11 +12,8 @@ from statistics import mean
 from utils import prepare_results as pr
 from utils import store_results as sr
 
-import sys
-sys.path.append("./tensorflow_hub/utils")
-
 # Change main paramateres
-path_to_file = "./tensorflow_hub/sample_video/"
+path_to_file = "./sample_video/"
 video_name = "IMG_1048"
 video_type = ".mp4"
 model_name = "i3d-kinetics-400"
@@ -42,7 +39,7 @@ def load_video(path, max_frames=0, resize=(224, 224)):
   return np.array(frames) / 255.0
 
 
-file = open("./tensorflow_hub/i3d-kinetics-400_labels.txt","r")
+file = open("./i3d-kinetics-400_labels.txt","r")
 labels = []
 for line in file.readlines():
   labels.append(line.strip())

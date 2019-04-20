@@ -1,4 +1,4 @@
-path = './tensorflow_hub/results.txt'
+path = './results.txt'
 file = open(path,'a+')
 
 

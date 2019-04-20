@@ -25,11 +25,8 @@ import base64
 from utils import prepare_results as pr
 from utils import store_results as sr
 
-import sys
-sys.path.append("./tensorflow_hub/utils")
-
 # Change main paramateres
-path_to_file = "./tensorflow_hub/sample_video/"
+path_to_file = "./sample_video/"
 video_name = "IMG_1048"
 video_type = ".mp4"
 model_name = "Inception Resnet V2"
@@ -44,6 +41,8 @@ point = frame_count / 100
 # parameters requried in resize()
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)   
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT) 
+# parameter for enabling frame resizing
+do_resize = True
 
 # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
 module_handle = "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"
@@ -93,7 +92,10 @@ with tf.Graph().as_default():
           break
         
         ret, image_np = cap.read()
-        image_np = cv2.resize(image_np, (int(height/2), int(width/2)))
+
+        if (do_resize):
+          image_np = cv2.resize(image_np, (int(height/2), int(width/2)))
+        
         if (i % procesing_frame_rate == 0):
           #print("Started [%s]\n" % i)
           result_out, image_out = session.run(
