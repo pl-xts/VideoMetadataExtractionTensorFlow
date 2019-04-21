@@ -16,9 +16,8 @@ from utils import store_results as sr
 path_to_file = "./sample_video/"
 video_name = "IMG_1048"
 video_type = ".mp4"
-model_name = "i3d-kinetics-400"
+model_name = "i3d-kinetics-600"
 
-sample_video = load_video(path_to_file + video_name + video_type)
 
 def load_video(path, max_frames=0, resize=(224, 224)):
   cap = cv2.VideoCapture(path)
@@ -39,15 +38,17 @@ def load_video(path, max_frames=0, resize=(224, 224)):
   return np.array(frames) / 255.0
 
 
-file = open("./i3d-kinetics-400_labels.txt","r")
+file = open("./" + model_name + "_labels.txt","r")
 labels = []
 for line in file.readlines():
   labels.append(line.strip())
 file.close()
 
+sample_video = load_video(path_to_file + video_name + video_type)
+
 with tf.Graph().as_default():
   start = time.time()
-  i3d = hub.Module("https://tfhub.dev/deepmind/i3d-kinetics-400/1")
+  i3d = hub.Module("https://tfhub.dev/deepmind/" + model_name + "/1")
   input_placeholder = tf.placeholder(shape=(None, None, 224, 224, 3), dtype=tf.float32)
   logits = i3d(input_placeholder)
   probabilities = tf.nn.softmax(logits)
