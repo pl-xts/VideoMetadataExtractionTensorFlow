@@ -16,24 +16,23 @@ from utils import store_results as sr
 
 # Change main paramateres
 path_to_file = "./sample_video/"
-video_name = "IMG_1048"
+video_name = "zoo"
 video_type = ".mp4"
-model_name = "Yolo"
-do_resize = True
+model_name = "Yolo V2"
+min_threshold = 10
 cap = cv2.VideoCapture(path_to_file + video_name + video_type)
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-print(frame_count)
 fps = cap.get(cv2.CAP_PROP_FPS )
-print(fps)
 # Only each [procesing_frame_rate] frame will be used for prediction
-procesing_frame_rate = int(frame_count / int(frame_count/fps) / 2)
+# 30 fps = every second 1 frame will be used
+procesing_frame_rate = fps #int(frame_count / int(frame_count/fps))
 # parameter required for process completion track
 point = frame_count / 100
 # parameters requried in resize()
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)   
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT) 
-# parameter for enabling frame resizing
+# parameter for enabling frame resizing 
 do_resize = True
 
 options = {"model": "./cfg/yolo.cfg", 
@@ -52,10 +51,11 @@ def find_top_classes(result_list, result_out):
     for i in range(len(result_out)):
         current_class = result_out[i]["label"]
         scores = int (100 * result_out[i]["confidence"])
-        if current_class not in result_list.keys(): 
-            result_list[current_class] = scores
-        if current_class in result_list.keys() and result_list[current_class] < scores:
-            result_list[current_class] = scores
+        if scores > min_threshold:
+            if current_class not in result_list.keys(): 
+                result_list[current_class] = scores
+            if current_class in result_list.keys() and result_list[current_class] < scores:
+                result_list[current_class] = scores
 
 result_list = dict()
 i = 0
@@ -80,9 +80,12 @@ while(True):
 
 passed_seconds = int(time.time() - start)
 m, s = divmod(passed_seconds, 60)
+
+sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
+
 pr.sort_translate_print(result_list, model_name)
+
 print("Total spend time: {:02d}m : {:02d}s".format(m,s))
 print("=======================================")
-sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
 
 cap.release() 

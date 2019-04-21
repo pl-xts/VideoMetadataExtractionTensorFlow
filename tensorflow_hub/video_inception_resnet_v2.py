@@ -27,15 +27,17 @@ from utils import store_results as sr
 
 # Change main paramateres
 path_to_file = "./sample_video/"
-video_name = "IMG_1048"
+video_name = "zoo"
 video_type = ".mp4"
-model_name = "Inception Resnet V2"
+model_name = "Fast R-CNN + Inception V2"
+min_threshold = 10
 cap = cv2.VideoCapture(path_to_file + video_name + video_type)
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 fps = cap.get(cv2.CAP_PROP_FPS)
 # Only each [procesing_frame_rate] frame will be used for prediction
-procesing_frame_rate = int(frame_count / int(frame_count/fps))
+# 30 fps = every second 1 frame will be used
+procesing_frame_rate = fps #int(frame_count / int(frame_count/fps))
 # parameter required for process completion track
 point = frame_count / 100
 # parameters requried in resize()
@@ -55,10 +57,11 @@ def find_top_classes(result_list, result_out):
   for i in range(len(result_out["detection_class_entities"])):
     current_class = result_out["detection_class_entities"][i].decode("utf-8")
     scores = int (100 * result_out["detection_scores"][i])
-    if current_class not in result_list.keys(): 
-      result_list[current_class] = scores
-    if current_class in result_list.keys() and result_list[current_class] < scores:
-       result_list[current_class] = scores
+    if scores > min_threshold:
+      if current_class not in result_list.keys(): 
+        result_list[current_class] = scores
+      if current_class in result_list.keys() and result_list[current_class] < scores:
+        result_list[current_class] = scores
  #print("Apending: %s" % result_list)
 
 detection_graph = tf.Graph()
@@ -98,8 +101,8 @@ with tf.Graph().as_default():
         
         if (i % procesing_frame_rate == 0):
           #print("Started [%s]\n" % i)
-          result_out, image_out = session.run(
-            [result, decoded_image_float],
+          result_out = session.run(
+            result,
             feed_dict={input_placeholder: image_np})
           find_top_classes(result_list, result_out)
           print("[{}] Completed: {} %".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()),int(i / point)))
@@ -112,9 +115,10 @@ with tf.Graph().as_default():
     passed_seconds = int(time.time() - start)
     m, s = divmod(passed_seconds, 60)
     
-    pr.sort_translate_print(result_list, model_name)
+    sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
 
+    pr.sort_translate_print(result_list, model_name)
+    
     print("Total spend time: {:02d}m : {:02d}s".format(m,s))
     print("=======================================")
-    sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
 cap.release()
