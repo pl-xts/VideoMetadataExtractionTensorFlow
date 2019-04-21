@@ -10,6 +10,9 @@ def create_bar_chart(names, scores, model_name):
   plt.xlabel('Precizitāte')
   plt.ylabel('Klases')
   plt.title(model_name)
+
+  ax = plt.gca()
+  ax.invert_yaxis()
   plt.show()
 
 def create_request_and_translate(sorted_names):
@@ -26,7 +29,6 @@ def create_request_and_translate(sorted_names):
 def sort_translate_print(result_list, model_name):
  
   sorted_names = sorted(result_list, reverse=True, key=result_list.__getitem__)
-
   response = create_request_and_translate(sorted_names)
   
   i = 1
