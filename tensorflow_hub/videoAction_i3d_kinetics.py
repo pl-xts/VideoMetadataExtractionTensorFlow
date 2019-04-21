@@ -14,24 +14,50 @@ from utils import store_results as sr
 
 # Change main paramateres
 path_to_file = "./sample_video/"
-video_name = "IMG_1048"
+video_name = "people_city_daytime"
 video_type = ".mp4"
 model_name = "i3d-kinetics-600"
 
+cap = cv2.VideoCapture(path_to_file + video_name + video_type)
+# Properties of video file
+frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+fps = cap.get(cv2.CAP_PROP_FPS )
+# Only each [procesing_frame_rate] frame will be used for prediction
+# 30 fps = every second 1 frame will be used
+procesing_frame_rate = fps #int(frame_count / int(frame_count/fps))
+# parameter required for process completion track
+point = frame_count / 100
+# parameters requried in resize()
+width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)   
+height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT) 
+# parameter for enabling frame resizing 
+do_resize = True
 
 def load_video(path, max_frames=0, resize=(224, 224)):
-  cap = cv2.VideoCapture(path)
+  
   frames = []
+  i = 0
   try:
     while True:
-      ret, frame = cap.read()
-      if not ret:
+      if (procesing_frame_rate > frame_count):
+        print("[{}] Wrong 'processing_frame_rate' value: {} < {}".format(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), 1, 2))
         break
-      frame = cv2.resize(frame, resize)
-      frame = frame[:, :, [2, 1, 0]]
-      frames.append(frame)
+      if (i % procesing_frame_rate == 0):
       
-      if len(frames) == max_frames:
+        ret, frame = cap.read()
+        if not ret:
+          break
+        if (do_resize):
+          frame = cv2.resize(frame, resize)
+       
+        frame = frame[:, :, [2, 1, 0]]
+        frames.append(frame)
+        
+        if len(frames) == max_frames:
+          break
+
+      i = i + 1
+      if (cap.get(cv2.CAP_PROP_FRAME_COUNT) == i):
         break
   finally:
     cap.release()
@@ -46,7 +72,9 @@ file.close()
 
 sample_video = load_video(path_to_file + video_name + video_type)
 
+
 with tf.Graph().as_default():
+
   start = time.time()
   i3d = hub.Module("https://tfhub.dev/deepmind/" + model_name + "/1")
   input_placeholder = tf.placeholder(shape=(None, None, 224, 224, 3), dtype=tf.float32)
@@ -54,6 +82,7 @@ with tf.Graph().as_default():
   probabilities = tf.nn.softmax(logits)
   # First add an empty dimension to the sample video as the model takes as input
   # a batch of videos.  
+  
   model_input = np.expand_dims(sample_video, axis=0)
   with tf.train.MonitoredSession() as session:
     [ps] = session.run(probabilities,
@@ -72,6 +101,6 @@ for i in np.argsort(ps)[::-1][:5]:
 
 pr.sort_translate_print(dict(zip(names, scores)), model_name)
 
+sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_name)
 print("Total spend time: {:02d}m : {:02d}s".format(m,s))
 print("=======================================")
-sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_name)
