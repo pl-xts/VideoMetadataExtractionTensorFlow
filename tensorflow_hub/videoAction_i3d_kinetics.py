@@ -17,7 +17,7 @@ path_to_file = "./sample_video/"
 video_name = "people_city_daytime"
 video_type = ".mp4"
 model_name = "i3d-kinetics-600"
-
+min_threshold = 10
 cap = cv2.VideoCapture(path_to_file + video_name + video_type)
 # Properties of video file
 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -33,8 +33,10 @@ height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 # parameter for enabling frame resizing 
 do_resize = True
 
+def average(result_list):
+ return sum(result_list.values()) / len(result_list)
+
 def load_video(path, max_frames=0, resize=(224, 224)):
-  
   frames = []
   i = 0
   try:
@@ -91,16 +93,22 @@ with tf.Graph().as_default():
 passed_seconds = int(time.time() - start)
 m, s = divmod(passed_seconds, 60)
 
-print("Top 5 actions:")
+print("=======================================")
 names = []
 scores = []
+result_list = dict()
 rank = 0
-for i in np.argsort(ps)[::-1][:5]:
-  names.append(labels[i].capitalize())
-  scores.append(int(ps[i] * 100))
+for i in np.argsort(ps)[::-1]:
+  current_class = labels[i].capitalize()
+  current_score = int(ps[i] * 100)
+  if current_score > min_threshold:
+    if current_class not in result_list.keys(): 
+      result_list[current_class] = current_score
+    if current_class in result_list.keys() and result_list[current_class] < current_score:
+       result_list[current_class] = current_score
 
-pr.sort_translate_print(dict(zip(names, scores)), model_name)
 
-sr.store_results(model_name, len(names), mean(scores), passed_seconds, video_name)
+sr.store_results(model_name, len(result_list), average(result_list), passed_seconds, video_name)
+pr.sort_translate_print(result_list, model_name)
 print("Total spend time: {:02d}m : {:02d}s".format(m,s))
 print("=======================================")
