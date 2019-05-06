@@ -62,7 +62,7 @@ def boxing(original_img, predictions):
 
         if confidence > 0.1:
             newImage = cv2.rectangle(newImage, (top_x, top_y), (btm_x, btm_y), (0,0,255), 3)
-            newImage = cv2.putText(newImage, label, (top_x, top_y-5), cv2.FONT_HERSHEY_COMPLEX_SMALL , 0.8, (255, 0, 0), 1, cv2.LINE_AA)
+            newImage = cv2.putText(newImage, label, (top_x, top_y-5), cv2.FONT_HERSHEY_COMPLEX_SMALL , 1, (255, 20, 20), 1, cv2.LINE_AA)
             
     return newImage
 
