@@ -11,4 +11,7 @@ Weights for YOLO are accessible <a href="https://drive.google.com/open?id=1EMLSQ
 
 Checkpoint for YOLO is available <a href="https://drive.google.com/file/d/1RiGuBkW3W_hiU7F3tNXSm5wQAq7A2zOG/view?usp=sharing" target="_blank">**here**</a>. Put all files into new **./ckpt** folder
 
-
+Command for YOLO training on custom data set
+```
+python.exe flow.py --model ./cfg/tiny-yolo-vocCustom.cfg --load ./bin/tiny-yolo-voc.weights --train --annotation ./dataset/annotations --dataset ./dataset/images --gpu 1 --batch 20 --epoch 300 --save 4450
+```
